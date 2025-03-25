@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "simpleblockbreaker:placer"
+  ],
+  "result": {
+    "id": "simpleblockbreaker:breaker",
+    "count": 1
+  }
+}

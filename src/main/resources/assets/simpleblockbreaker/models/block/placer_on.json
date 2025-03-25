@@ -1,0 +1,6 @@
+{
+  "parent": "simpleblockbreaker:block/placer",
+  "textures": {
+    "front": "simpleblockbreaker:block/placer_front_on"
+  }
+}

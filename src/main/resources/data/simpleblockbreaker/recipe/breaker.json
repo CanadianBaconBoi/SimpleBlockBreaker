@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "PRI",
+    "###"
+  ],
+  "key": {
+    "#": "minecraft:cobblestone",
+    "P": "minecraft:piston",
+    "R": "minecraft:redstone",
+    "I": "minecraft:iron_pickaxe"
+  },
+  "result": {
+    "id": "simpleblockbreaker:breaker",
+    "count": 1
+  }
+}

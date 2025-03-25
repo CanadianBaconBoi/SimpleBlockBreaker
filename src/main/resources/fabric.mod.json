@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "simpleblockbreaker",
+  "version": "${version}",
+
+  "name": "Simple Block Breaker and Placer",
+  "description": "This is an example description! Tell everyone what your mod is about!",
+  "authors": [
+    "CanadianBaconBoi"
+  ],
+  "contact": {
+    "homepage": "https://github.com/CanadianBaconBoi/SimpleBlockBreaker",
+    "sources": "https://github.com/CanadianBaconBoi/SimpleBlockBreaker"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/simpleblockbreaker/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      {
+        "adapter": "kotlin",
+        "value": "net.cdnbcn.simpleblockbreaker.BlockBreakerMod"
+      }
+    ],
+    "client": [
+      {
+        "adapter": "kotlin",
+        "value": "net.cdnbcn.simpleblockbreaker.BlockBreakerMod"
+      }
+    ]
+  },
+  "mixins": [
+    "simpleblockbreaker.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "~${minecraft_version}",
+    "java": ">=21",
+    "fabric-language-kotlin": ">=${fabric_kotlin_version}"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
