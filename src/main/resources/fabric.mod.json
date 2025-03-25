@@ -4,7 +4,7 @@
   "version": "${version}",
 
   "name": "Simple Block Breaker and Placer",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Simple vanilla-friendly redstone breaker and placer",
   "authors": [
     "CanadianBaconBoi"
   ],
@@ -13,7 +13,7 @@
     "sources": "https://github.com/CanadianBaconBoi/SimpleBlockBreaker"
   },
 
-  "license": "CC0-1.0",
+  "license": "MIT",
   "icon": "assets/simpleblockbreaker/icon.png",
 
   "environment": "*",
