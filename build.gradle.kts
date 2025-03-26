@@ -30,8 +30,8 @@ dependencies {
 
     modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
     modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
-    modImplementation("io.github.cottonmc:LibGui:12.0.1+1.21.2")
-    include("io.github.cottonmc:LibGui:12.0.1+1.21.2")
+    modImplementation("io.github.cottonmc:LibGui:${property("cottonmc_libgui_version")}")
+    include("io.github.cottonmc:LibGui:${property("cottonmc_libgui_version")}")
 }
 
 tasks {

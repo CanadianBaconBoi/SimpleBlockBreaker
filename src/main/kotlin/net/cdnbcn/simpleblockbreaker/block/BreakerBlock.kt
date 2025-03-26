@@ -61,15 +61,8 @@ class BreakerBlock(settings: Settings) : BlockWithEntity(settings) {
         return ActionResult.SUCCESS
     }
 
-    public override fun onStateReplaced(state: BlockState, world: World, pos: BlockPos?, newState: BlockState, moved: Boolean) {
-        if (state.block !== newState.block) {
-            val blockEntity = world.getBlockEntity(pos)
-            if (blockEntity is BreakerBlockEntity) {
-                ItemScatterer.spawn(world, pos, blockEntity)
-                world.updateComparators(pos, this)
-            }
-            super.onStateReplaced(state, world, pos, newState, moved)
-        }
+    public override fun onStateReplaced(state: BlockState, world: ServerWorld, pos: BlockPos?, moved: Boolean) {
+        ItemScatterer.onStateReplaced(state, world, pos)
     }
 
     public override fun hasComparatorOutput(state: BlockState?): Boolean {
