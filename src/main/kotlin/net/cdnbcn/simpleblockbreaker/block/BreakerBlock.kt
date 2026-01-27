@@ -97,7 +97,8 @@ class BreakerBlock(settings: Settings) : BlockWithEntity(settings) {
         val facing: Direction = state.get(PlacerBlock.FACING)
         val targetPos = pos.offset(facing)
         val blockState = world.getBlockState(targetPos)
-        if (!blockState.isAir) {
+        world.addBlockBreakParticles(targetPos, blockState)
+        if (!blockState.isAir && blockState.getHardness(world, targetPos) >= 0.0f) {
             val stacks = blockState.getDroppedStacks(LootWorldContext.Builder(world).add(LootContextParameters.ORIGIN, pos.toCenterPos()).add(LootContextParameters.TOOL, ItemStack(Items.IRON_PICKAXE)))
             for (stack in stacks) {
                 val items = blockEntity.getItems()
@@ -120,7 +121,6 @@ class BreakerBlock(settings: Settings) : BlockWithEntity(settings) {
                     world.spawnEntity(itemEntity)
                 }
             }
-
             world.breakBlock(targetPos, false)
         }
     }
