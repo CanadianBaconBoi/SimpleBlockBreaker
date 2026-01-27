@@ -1,87 +1,147 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.net.URI
-
 plugins {
-    kotlin("jvm")
-    id("fabric-loom")
-    `maven-publish`
-    java
+    id("net.neoforged.moddev")
+    kotlin("jvm") version "2.2.20"
+
+    // `maven-publish`
+    id("me.modmuss50.mod-publish-plugin") version "1.1.0"
 }
 
-group = property("maven_group")!!
-version = property("mod_version")!!
+version = "${property("mod.version")}+${sc.current.version}"
+base.archivesName = property("mod.id") as String
+
+val requiredJava = when {
+    sc.current.parsed >= "1.20.6" -> JavaVersion.VERSION_21
+    sc.current.parsed >= "1.18" -> JavaVersion.VERSION_17
+    sc.current.parsed >= "1.17" -> JavaVersion.VERSION_16
+    else -> JavaVersion.VERSION_1_8
+}
 
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    /**
+     * Restricts dependency search of the given [groups] to the [maven URL][url],
+     * improving the setup speed.
+     */
+    fun strictMaven(url: String, alias: String, vararg groups: String) = exclusiveContent {
+        forRepository { maven(url) { name = alias } }
+        filter { groups.forEach(::includeGroup) }
+    }
+    strictMaven("https://www.cursemaven.com", "CurseForge", "curse.maven")
+    strictMaven("https://api.modrinth.com/maven", "Modrinth", "maven.modrinth")
+
     maven {
-        name = "CottonMC"
-        url = URI("https://server.bbkr.space/artifactory/libs-release")
+        name = "Kotlin for Forge"
+        setUrl("https://thedarkcolour.github.io/KotlinForForge/")
     }
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:${property("minecraft_version")}")
-    mappings("net.fabricmc:yarn:${property("yarn_mappings")}:v2")
-    modImplementation("net.fabricmc:fabric-loader:${property("loader_version")}")
-
-    modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_api_version")}")
-    modImplementation("io.github.cottonmc:LibGui:${property("cottonmc_libgui_version")}")
-    include("io.github.cottonmc:LibGui:${property("cottonmc_libgui_version")}")
+    implementation("thedarkcolour:kotlinforforge-neoforge:${property("deps.kotlin_for_forge")}")
 }
 
-tasks {
+neoForge {
+    version = property("deps.neoforge") as String
 
-    processResources {
-        inputs.property("version", project.version)
-        filesMatching("fabric.mod.json") {
-            expand(getProperties())
-            expand(mutableMapOf("version" to project.version))
-        }
-    }
-
-    jar {
-        from("LICENSE")
-    }
-
-    publishing {
-        publications {
-            create<MavenPublication>("mavenJava") {
-                artifact(remapJar) {
-                    builtBy(remapJar)
-                }
-                artifact(kotlinSourcesJar) {
-                    builtBy(remapSourcesJar)
-                }
-            }
+    runs {
+        register("client") {
+            gameDirectory = file("../../run/")
+            client()
         }
 
-        // select the repositories you want to publish to
-        repositories {
-            // uncomment to publish to the local maven
-            // mavenLocal()
+        register("server") {
+            gameDirectory = file("../../run/")
+            server()
         }
     }
-
-    compileKotlin {
-        compilerOptions {
-            jvmTarget = JvmTarget.JVM_21
-        }
-    }
-
 }
 
 java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
     withSourcesJar()
+    targetCompatibility = requiredJava
+    sourceCompatibility = requiredJava
 }
 
+tasks {
+    processResources {
+        inputs.property("id", project.property("mod.id"))
+        inputs.property("name", project.property("mod.name"))
+        inputs.property("version", project.property("mod.version"))
+        inputs.property("minecraft", project.property("mod.mc_dep"))
 
+        val props = mapOf(
+            "id" to project.property("mod.id"),
+            "name" to project.property("mod.name"),
+            "version" to project.property("mod.version"),
+            "minecraft" to project.property("mod.mc_dep"),
+            "kff_ver" to project.property("deps.kotlin_for_forge"),
+        )
 
-// configure the maven publication
+        filesMatching("META-INF/neoforge.mods.toml") { expand(props) }
+
+        val mixinJava = "JAVA_${requiredJava.majorVersion}"
+        filesMatching("*.mixins.json") { expand("java" to mixinJava) }
+    }
+
+    named("createMinecraftArtifacts") {
+        dependsOn("stonecutterGenerate")
+    }
+
+    // Builds the version into a shared folder in `build/libs/${mod version}/`
+    register<Copy>("buildAndCollect") {
+        group = "build"
+        from(jar.map { it.archiveFile })
+        into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
+        dependsOn("build")
+    }
+}
+
+// Publishes builds to Modrinth and Curseforge with changelog from the CHANGELOG.md file
+publishMods {
+    file = tasks.jar.map { it.archiveFile.get() }
+    displayName = "${property("mod.name")} ${property("mod.version")} for ${property("mod.mc_title")}"
+    version = property("mod.version") as String
+    changelog = rootProject.file("CHANGELOG.md").readText()
+    type = STABLE
+    modLoaders.add("neoforge")
+
+    dryRun = providers.environmentVariable("MODRINTH_TOKEN").getOrNull() == null
+            || providers.environmentVariable("CURSEFORGE_TOKEN").getOrNull() == null
+
+    modrinth {
+        projectId = property("publish.modrinth") as String
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
+    }
+
+    curseforge {
+        projectId = property("publish.curseforge") as String
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
+    }
+}
+
+/*
+// Publishes builds to a maven repository under `com.example:template:0.1.0+mc`
+publishing {
+    repositories {
+        maven("https://maven.example.com/releases") {
+            name = "myMaven"
+            // To authenticate, create `myMavenUsername` and `myMavenPassword` properties in your Gradle home properties.
+            // See https://stonecutter.kikugie.dev/wiki/tips/properties#defining-properties
+            credentials(PasswordCredentials::class.java)
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+        }
+    }
+
+    publications {
+        create<MavenPublication>("mavenJava") {
+            groupId = "${property("mod.group")}.${property("mod.id")}"
+            artifactId = property("mod.id") as String
+            version = project.version
+
+            from(components["java"])
+        }
+    }
+}
+ */

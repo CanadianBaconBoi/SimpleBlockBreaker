@@ -1,0 +1,22 @@
+license = "MIT"
+
+modLoader="kotlinforforge"
+loaderVersion="[${kff_ver},)"
+
+[[mods]]
+modId = "${id}"
+displayName = "${name}"
+version = "${version}"
+authors = "CanadianBaconBoi"
+description = "Simple vanilla-friendly redstone breaker and placer"
+
+logoFile = "assets/simpleblockbreaker/icon.png"
+displayURL = "https://github.com/CanadianBaconBoi/SimpleBlockBreaker"
+issueTrackerUrl = "https://github.com/CanadianBaconBoi/SimpleBlockBreaker/issues"
+
+[[dependencies.${id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"

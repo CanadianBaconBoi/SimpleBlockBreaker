@@ -1,144 +1,212 @@
 package net.cdnbcn.simpleblockbreaker.block
 
 import com.mojang.serialization.MapCodec
-import net.cdnbcn.simpleblockbreaker.block.entity.BlockEntityTypes
+import net.cdnbcn.simpleblockbreaker.BlockBreakerMod
 import net.cdnbcn.simpleblockbreaker.block.entity.BreakerBlockEntity
-import net.minecraft.block.*
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.entity.ItemEntity
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemPlacementContext
-import net.minecraft.item.ItemStack
-import net.minecraft.item.Items
-import net.minecraft.loot.context.LootContextParameters
-import net.minecraft.loot.context.LootWorldContext
-import net.minecraft.screen.NamedScreenHandlerFactory
-import net.minecraft.screen.ScreenHandler
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.state.StateManager
-import net.minecraft.state.property.BooleanProperty
-import net.minecraft.state.property.EnumProperty
-import net.minecraft.state.property.Properties
-import net.minecraft.state.property.Property
-import net.minecraft.util.ActionResult
-import net.minecraft.util.BlockMirror
-import net.minecraft.util.BlockRotation
-import net.minecraft.util.ItemScatterer
-import net.minecraft.util.hit.BlockHitResult
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.random.Random
-import net.minecraft.world.World
-import net.minecraft.world.block.WireOrientation
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.util.RandomSource
+import net.minecraft.world.Containers
+import net.minecraft.world.InteractionResult
+import net.minecraft.world.MenuProvider
+import net.minecraft.world.SimpleMenuProvider
+import net.minecraft.world.entity.item.ItemEntity
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.world.item.context.BlockPlaceContext
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.EntityBlock
+import net.minecraft.world.level.block.Mirror
+import net.minecraft.world.level.block.Rotation
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.state.StateDefinition
+import net.minecraft.world.level.block.state.properties.BlockStateProperties
+import net.minecraft.world.level.block.state.properties.BooleanProperty
+import net.minecraft.world.level.block.state.properties.EnumProperty
+import net.minecraft.world.level.block.state.properties.Property
+//? if >=1.21.11
+import net.minecraft.world.level.redstone.Orientation
+import net.minecraft.world.level.storage.loot.LootParams
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams
+import net.minecraft.world.phys.BlockHitResult
 import kotlin.math.min
 
-class BreakerBlock(settings: Settings) : BlockWithEntity(settings) {
+class BreakerBlock(settings: Properties) : Block(settings), EntityBlock {
     companion object {
-        val POWERED: BooleanProperty = Properties.POWERED
-        val FACING: EnumProperty<Direction> = Properties.FACING
+        val POWERED: BooleanProperty = BlockStateProperties.POWERED
+        val FACING: EnumProperty<Direction> = BlockStateProperties.FACING
     }
 
     init {
-        defaultState = defaultState.with(POWERED, false).with(FACING, Direction.NORTH)
+        registerDefaultState(defaultBlockState().apply {
+            this.setValue(POWERED, false)
+            this.setValue(FACING, Direction.NORTH)
+        })
     }
 
-    override fun getCodec(): MapCodec<out BlockWithEntity> = createCodec { settings -> BreakerBlock(settings) }
-    override fun createBlockEntity(pos: BlockPos, state: BlockState) = BreakerBlockEntity(pos, state)
-    override fun getRenderType(state: BlockState) = BlockRenderType.MODEL
+    override fun codec(): MapCodec<out Block> {
+        return simpleCodec { properties -> BreakerBlock(properties) }
+    }
 
-    override fun <T : BlockEntity?> getTicker(world: World?, state: BlockState?, type: BlockEntityType<T>?) =
-        validateTicker(type, BlockEntityTypes.BREAKER_BLOCK, BreakerBlockEntity::tick)
+    override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
+        return BreakerBlockEntity(pos, state)
+    }
 
-    public override fun onUse(state: BlockState, world: World, pos: BlockPos?, player: PlayerEntity, hit: BlockHitResult?): ActionResult {
-        if (!world.isClient) {
-            val screenHandlerFactory: NamedScreenHandlerFactory? = state.createScreenHandlerFactory(world, pos)
-
+    override fun useWithoutItem(
+        state: BlockState,
+        world: Level,
+        pos: BlockPos,
+        player: Player,
+        hit: BlockHitResult
+    ): InteractionResult {
+        if (!world.isClientSide) {
+            val screenHandlerFactory: MenuProvider? = state.getMenuProvider(world, pos)
             if (screenHandlerFactory != null) {
-                player.openHandledScreen(screenHandlerFactory)
+                player.openMenu(screenHandlerFactory)
             }
         }
-        return ActionResult.SUCCESS
+        return InteractionResult.SUCCESS
     }
 
-    public override fun onStateReplaced(state: BlockState, world: ServerWorld, pos: BlockPos?, moved: Boolean) {
-        ItemScatterer.onStateReplaced(state, world, pos)
+    //? if =1.21.11 {
+    override fun affectNeighborsAfterRemoval(state: BlockState, world: ServerLevel, pos: BlockPos, moved: Boolean) {
+        Containers.updateNeighboursAfterDestroy(state, world, pos)
     }
+    //?} elif =1.12.1 {
+    /*
+    override fun onRemove(state: BlockState, world: Level, pos: BlockPos, newBlockState: BlockState, moved: Boolean) {
+        Containers.dropContentsOnDestroy(state, newBlockState, world, pos)
+    }
+     *///?}
 
-    public override fun hasComparatorOutput(state: BlockState?): Boolean {
+    public override fun hasAnalogOutputSignal(state: BlockState): Boolean {
         return true
     }
 
-    public override fun getComparatorOutput(state: BlockState?, world: World, pos: BlockPos?): Int {
-        return ScreenHandler.calculateComparatorOutput(world.getBlockEntity(pos))
+    public override fun getAnalogOutputSignal(
+        state: BlockState, world: Level, pos: BlockPos,
+        //? if =1.21.11
+        direction: Direction
+    ): Int {
+        return AbstractContainerMenu.getRedstoneSignalFromBlockEntity(world.getBlockEntity(pos))
     }
 
-    override fun neighborUpdate(
+
+    override fun neighborChanged(
         state: BlockState,
-        world: World,
+        world: Level,
         pos: BlockPos,
-        sourceBlock: Block?,
-        wireOrientation: WireOrientation?,
+        sourceBlock: Block,
+        wireOrientation:
+        //? if =1.21.11 {
+        Orientation?,
+        //?} elif =1.21.1 {
+        /*
+        BlockPos,
+        *///?}
         notify: Boolean
     ) {
-        val bl = world.isReceivingRedstonePower(pos) || world.isReceivingRedstonePower(pos.up())
-        val bl2 = state.get(POWERED) as Boolean
+        val bl = world.hasNeighborSignal(pos) || world.hasNeighborSignal(pos.above())
+        val bl2 = state.getValue(POWERED)
         if (bl && !bl2) {
-            world.scheduleBlockTick(pos, this, 1)
-            world.setBlockState(pos, state.with(POWERED, true))
+            world.scheduleTick(pos, this, 1)
+            world.setBlock(pos, state.setValue(POWERED, true), UPDATE_ALL)
         } else if (!bl && bl2) {
-            world.setBlockState(pos, state.with(POWERED, false))
+            world.setBlock(pos, state.setValue(POWERED, false), UPDATE_ALL)
         }
     }
 
-    override fun scheduledTick(state: BlockState, world: ServerWorld, pos: BlockPos, random: Random) {
+    override fun tick(state: BlockState, world: ServerLevel, pos: BlockPos, random: RandomSource) {
         val blockEntity = world.getBlockEntity(pos)
         if (blockEntity !is BreakerBlockEntity) return
-        val facing: Direction = state.get(PlacerBlock.FACING)
-        val targetPos = pos.offset(facing)
+        val facing: Direction = state.getValue(PlacerBlock.FACING)
+        val targetPos = pos.relative(facing)
         val blockState = world.getBlockState(targetPos)
-        world.addBlockBreakParticles(targetPos, blockState)
-        if (!blockState.isAir && blockState.getHardness(world, targetPos) >= 0.0f) {
-            val stacks = blockState.getDroppedStacks(LootWorldContext.Builder(world).add(LootContextParameters.ORIGIN, pos.toCenterPos()).add(LootContextParameters.TOOL, ItemStack(Items.IRON_PICKAXE)))
-            for (stack in stacks) {
-                val items = blockEntity.getItems()
-                for (i in 0..<9) {
-                    val slot = items[i]
-                    if (stack.item == slot.item && slot.count < slot.maxCount) {
-                        val maxTake = slot.maxCount - slot.count
-                        val take = min(stack.count, maxTake)
-                        slot.count += take
-                        stack.count -= take
-                    } else if (slot.isEmpty) {
-                        items[i] = stack.copyAndEmpty()
-                    }
-                }
-            }
+        world.addDestroyBlockEffect(targetPos, blockState)
 
-            for (stack in stacks) {
-                if (!stack.isEmpty) {
-                    val itemEntity = ItemEntity(world, targetPos.x.toDouble(), targetPos.y.toDouble(), targetPos.z.toDouble(), stack, 0.0, 0.5, 0.0)
-                    world.spawnEntity(itemEntity)
-                }
-            }
-            world.breakBlock(targetPos, false)
+        val config = BlockBreakerMod.PROCESSED_CONFIG
+
+        if (blockState.isAir) {
+            return
         }
+        val flag = config.breakerListType == BlockBreakerMod.Config.ListType.WHITELIST
+        if (config.breakerListItems.contains(blockState.block) != flag) {
+            return
+        }
+
+        if (blockState.block.defaultDestroyTime() < 0.0f) {
+            if (!config.canBreakUnbreakable) {
+                return
+            }
+            val flag1 = config.unbreakableListType == BlockBreakerMod.Config.ListType.WHITELIST
+            if (config.unbreakableListItems.contains(blockState.block) != flag1) {
+                return
+            }
+        }
+
+        val stacks = blockState.getDrops(
+            LootParams.Builder(world).withParameter(LootContextParams.ORIGIN, pos.center)
+                .withParameter(LootContextParams.TOOL, ItemStack(Items.IRON_PICKAXE))
+        )
+        for (stack in stacks) {
+            val items = blockEntity.getItems()
+            for (i in 0..<9) {
+                val slot = items[i]
+                if (stack.item == slot.item && slot.count < slot.maxStackSize) {
+                    val maxTake = slot.maxStackSize - slot.count
+                    val take = min(stack.count, maxTake)
+                    slot.count += take
+                    stack.count -= take
+                } else if (slot.isEmpty) {
+                    items[i] = stack.copyAndClear()
+                }
+            }
+        }
+
+        for (stack in stacks) {
+            if (!stack.isEmpty) {
+                val itemEntity = ItemEntity(
+                    world,
+                    targetPos.x.toDouble(),
+                    targetPos.y.toDouble(),
+                    targetPos.z.toDouble(),
+                    stack,
+                    0.0,
+                    0.5,
+                    0.0
+                )
+                world.addFreshEntity(itemEntity)
+            }
+        }
+        world.destroyBlock(targetPos, false)
     }
 
-    override fun getPlacementState(ctx: ItemPlacementContext): BlockState {
-        return defaultState.with(FACING, ctx.side.opposite) as BlockState
+    override fun getStateForPlacement(ctx: BlockPlaceContext): BlockState {
+        return defaultBlockState().setValue(FACING, ctx.nearestLookingDirection.opposite)
     }
 
-    override fun appendProperties(builder: StateManager.Builder<Block, BlockState>) {
+    override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
         builder.add(*arrayOf<Property<*>>(FACING, POWERED))
     }
 
-    override fun rotate(state: BlockState, rotation: BlockRotation): BlockState {
-        return state.with(FACING, rotation.rotate(state.get(FACING))) as BlockState
+    override fun rotate(state: BlockState, rotation: Rotation): BlockState {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)))
     }
 
-    override fun mirror(state: BlockState, mirror: BlockMirror): BlockState {
-        return state.rotate(mirror.getRotation(state.get(FACING)))
+    override fun mirror(state: BlockState, mirror: Mirror): BlockState {
+        return state.setValue(FACING, mirror.rotation().rotate(state.getValue(FACING)))
+    }
+
+    public override fun getMenuProvider(state: BlockState, world: Level, pos: BlockPos): MenuProvider {
+        val blockEntity = world.getBlockEntity(pos) as BreakerBlockEntity
+        return SimpleMenuProvider({ containerId, playerInventory, player ->
+            blockEntity.createMenu(containerId, playerInventory, player)
+        }, blockEntity.displayName)
     }
 
 }

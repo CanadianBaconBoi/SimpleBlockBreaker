@@ -1,134 +1,185 @@
 package net.cdnbcn.simpleblockbreaker.block
 
 import com.mojang.serialization.MapCodec
-import net.cdnbcn.simpleblockbreaker.block.entity.BlockEntityTypes
+import net.cdnbcn.simpleblockbreaker.BlockBreakerMod
 import net.cdnbcn.simpleblockbreaker.block.entity.PlacerBlockEntity
-import net.fabricmc.fabric.api.entity.FakePlayer
-import net.minecraft.block.*
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.BlockItem
-import net.minecraft.item.ItemPlacementContext
-import net.minecraft.item.ItemStack
-import net.minecraft.item.ItemUsageContext
-import net.minecraft.screen.NamedScreenHandlerFactory
-import net.minecraft.screen.ScreenHandler
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.sound.SoundCategory
-import net.minecraft.sound.SoundEvents
-import net.minecraft.state.StateManager
-import net.minecraft.state.property.BooleanProperty
-import net.minecraft.state.property.EnumProperty
-import net.minecraft.state.property.Properties
-import net.minecraft.state.property.Property
-import net.minecraft.util.*
-import net.minecraft.util.hit.BlockHitResult
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.random.Random
-import net.minecraft.world.World
-import net.minecraft.world.block.WireOrientation
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.sounds.SoundEvents
+import net.minecraft.sounds.SoundSource
+import net.minecraft.util.RandomSource
+import net.minecraft.world.*
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.item.BlockItem
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.context.BlockPlaceContext
+import net.minecraft.world.item.context.UseOnContext
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.EntityBlock
+import net.minecraft.world.level.block.Mirror
+import net.minecraft.world.level.block.Rotation
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.state.StateDefinition
+import net.minecraft.world.level.block.state.properties.BlockStateProperties
+import net.minecraft.world.level.block.state.properties.BooleanProperty
+import net.minecraft.world.level.block.state.properties.EnumProperty
+import net.minecraft.world.level.block.state.properties.Property
+//? if >=1.21.11
+import net.minecraft.world.level.redstone.Orientation
+import net.minecraft.world.phys.BlockHitResult
+import net.neoforged.neoforge.common.util.FakePlayer
 
-class PlacerBlock(settings: Settings) : BlockWithEntity(settings) {
+class PlacerBlock(settings: Properties) : Block(settings), EntityBlock {
     companion object {
-        val POWERED: BooleanProperty = Properties.POWERED
-        val FACING: EnumProperty<Direction> = Properties.FACING
+        val POWERED: BooleanProperty = BlockStateProperties.POWERED
+        val FACING: EnumProperty<Direction> = BlockStateProperties.FACING
     }
 
     init {
-        defaultState = defaultState.with(BreakerBlock.POWERED, false).with(BreakerBlock.FACING, Direction.NORTH)
+        registerDefaultState(defaultBlockState().apply {
+            this.setValue(POWERED, false)
+            this.setValue(FACING, Direction.NORTH)
+        })
     }
 
-    override fun getCodec(): MapCodec<out BlockWithEntity> = createCodec { settings -> PlacerBlock(settings) }
-    override fun createBlockEntity(pos: BlockPos, state: BlockState) = PlacerBlockEntity(pos, state)
-    override fun getRenderType(state: BlockState) = BlockRenderType.MODEL
+    override fun codec(): MapCodec<out Block> {
+        return simpleCodec { properties -> PlacerBlock(properties) }
+    }
 
-    override fun <T : BlockEntity?> getTicker(world: World?, state: BlockState?, type: BlockEntityType<T>?) =
-        validateTicker(type, BlockEntityTypes.PLACER_BLOCK, PlacerBlockEntity::tick)
+    override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity {
+        return PlacerBlockEntity(pos, state)
+    }
 
-    public override fun onUse(state: BlockState, world: World, pos: BlockPos?, player: PlayerEntity, hit: BlockHitResult?): ActionResult {
-        if (!world.isClient) {
-            val screenHandlerFactory: NamedScreenHandlerFactory? = state.createScreenHandlerFactory(world, pos)
+    override fun useWithoutItem(
+        state: BlockState,
+        world: Level,
+        pos: BlockPos,
+        player: Player,
+        hit: BlockHitResult
+    ): InteractionResult {
+        if (!world.isClientSide) {
+            val screenHandlerFactory: MenuProvider? = state.getMenuProvider(world, pos)
 
             if (screenHandlerFactory != null) {
-                player.openHandledScreen(screenHandlerFactory)
+                player.openMenu(screenHandlerFactory)
             }
         }
-        return ActionResult.SUCCESS
+        return InteractionResult.SUCCESS
     }
 
-    public override fun onStateReplaced(state: BlockState, world: ServerWorld, pos: BlockPos?, moved: Boolean) {
-        ItemScatterer.onStateReplaced(state, world, pos)
+    //? if =1.21.11 {
+    override fun affectNeighborsAfterRemoval(state: BlockState, world: ServerLevel, pos: BlockPos, moved: Boolean) {
+        Containers.updateNeighboursAfterDestroy(state, world, pos)
     }
+    //?} elif =1.12.1 {
+    /*
+    override fun onRemove(state: BlockState, world: Level, pos: BlockPos, newBlockState: BlockState, moved: Boolean) {
+        Containers.dropContentsOnDestroy(state, newBlockState, world, pos)
+    }
+     *///?}
 
-    public override fun hasComparatorOutput(state: BlockState?): Boolean {
+    public override fun hasAnalogOutputSignal(state: BlockState): Boolean {
         return true
     }
 
-    public override fun getComparatorOutput(state: BlockState?, world: World, pos: BlockPos?): Int {
-        return ScreenHandler.calculateComparatorOutput(world.getBlockEntity(pos))
+    public override fun getAnalogOutputSignal(
+        state: BlockState, world: Level, pos: BlockPos,
+        //? if =1.21.11
+        direction: Direction
+    ): Int {
+        return AbstractContainerMenu.getRedstoneSignalFromBlockEntity(world.getBlockEntity(pos))
     }
 
-    override fun neighborUpdate(
+
+    override fun neighborChanged(
         state: BlockState,
-        world: World,
+        world: Level,
         pos: BlockPos,
-        sourceBlock: Block?,
-        wireOrientation: WireOrientation?,
+        sourceBlock: Block,
+        wireOrientation:
+        //? if =1.21.11 {
+        Orientation?,
+        //?} elif =1.21.1 {
+        /*
+        BlockPos,
+        *///?}
         notify: Boolean
     ) {
-        val bl = world.isReceivingRedstonePower(pos) || world.isReceivingRedstonePower(pos.up())
-        val bl2 = state.get(POWERED) as Boolean
+        val bl = world.hasNeighborSignal(pos) || world.hasNeighborSignal(pos.above())
+        val bl2 = state.getValue(POWERED)
         if (bl && !bl2) {
-            world.scheduleBlockTick(pos, this, 1)
-            world.setBlockState(pos, state.with(POWERED, true))
+            world.scheduleTick(pos, this, 1)
+            world.setBlock(pos, state.setValue(POWERED, true), UPDATE_ALL)
         } else if (!bl && bl2) {
-            world.setBlockState(pos, state.with(POWERED, false))
+            world.setBlock(pos, state.setValue(POWERED, false), UPDATE_ALL)
         }
     }
 
-    override fun scheduledTick(state: BlockState, world: ServerWorld, pos: BlockPos, random: Random) {
+    override fun tick(state: BlockState, world: ServerLevel, pos: BlockPos, random: RandomSource) {
         val blockEntity = world.getBlockEntity(pos)
         if (blockEntity !is PlacerBlockEntity) return
-        val i: Int = blockEntity.chooseNonEmptySlot(world.random)
+        val i: Int = blockEntity.getRandomSlot(world.random)
         if (i < 0) {
-            world.playSound(null, pos, SoundEvents.BLOCK_DISPENSER_LAUNCH, SoundCategory.BLOCKS, 0.15f, 1f)
+            world.playSound(null, pos, SoundEvents.DISPENSER_LAUNCH, SoundSource.BLOCKS, 0.15f, 1f)
         } else {
-            val itemStack: ItemStack = blockEntity.getStack(i)
-            val facing: Direction = state.get(FACING)
-            val targetPos = pos.offset(facing)
+            val itemStack: ItemStack = blockEntity.getItem(i)
+            val facing: Direction = state.getValue(FACING)
+            val targetPos = pos.relative(facing)
             if (world.getBlockState(targetPos).isAir) {
                 if (itemStack.item is BlockItem) {
                     val block = (itemStack.item as BlockItem).block
-                    world.setBlockState(targetPos, block.defaultState)
-                    world.playSound(null, targetPos, SoundEvents.BLOCK_PISTON_EXTEND, SoundCategory.BLOCKS, 0.5f, 1f)
-                    itemStack.count -= 1
+                    val flag =
+                        BlockBreakerMod.PROCESSED_CONFIG.placerListType == BlockBreakerMod.Config.ListType.WHITELIST
+                    if (BlockBreakerMod.PROCESSED_CONFIG.placerListItems.contains(block) == flag) {
+                        world.setBlock(targetPos, block.defaultBlockState(), UPDATE_ALL)
+                        world.playSound(null, targetPos, SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 0.5f, 1f)
+                        itemStack.count -= 1
+                    } else {
+                        world.playSound(null, pos, SoundEvents.DISPENSER_LAUNCH, SoundSource.BLOCKS, 0.15f, 1f)
+                    }
                 }
             } else {
-                val fakePlayer: FakePlayer = FakePlayer.get(world)
-                val result = itemStack.useOnBlock(ItemUsageContext(world, fakePlayer, Hand.MAIN_HAND, itemStack, BlockHitResult(targetPos.toCenterPos(), facing.opposite, targetPos, true)))
-                if (result == ActionResult.CONSUME) {
+                val fakePlayer = FakePlayer(world, BlockBreakerMod.FAKE_PLAYER_PROFILE)
+                val result = itemStack.useOn(
+                    UseOnContext(
+                        world,
+                        fakePlayer,
+                        InteractionHand.MAIN_HAND,
+                        itemStack,
+                        BlockHitResult(targetPos.center, facing.opposite, targetPos, true)
+                    )
+                )
+                if (result == InteractionResult.CONSUME) {
                     itemStack.count -= 1
                 }
             }
         }
     }
 
-    override fun getPlacementState(ctx: ItemPlacementContext): BlockState {
-        return defaultState.with(FACING, ctx.side.opposite) as BlockState
+    override fun getStateForPlacement(ctx: BlockPlaceContext): BlockState {
+        return defaultBlockState().setValue(FACING, ctx.nearestLookingDirection.opposite)
     }
 
-    override fun appendProperties(builder: StateManager.Builder<Block, BlockState>) {
+    override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
         builder.add(*arrayOf<Property<*>>(FACING, POWERED))
     }
 
-    override fun rotate(state: BlockState, rotation: BlockRotation): BlockState {
-        return state.with(FACING, rotation.rotate(state.get(FACING))) as BlockState
+    override fun rotate(state: BlockState, rotation: Rotation): BlockState {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)))
     }
 
-    override fun mirror(state: BlockState, mirror: BlockMirror): BlockState {
-        return state.rotate(mirror.getRotation(state.get(FACING)))
+    override fun mirror(state: BlockState, mirror: Mirror): BlockState {
+        return state.setValue(FACING, mirror.rotation().rotate(state.getValue(FACING)))
     }
 
+    public override fun getMenuProvider(state: BlockState, world: Level, pos: BlockPos): MenuProvider {
+        val blockEntity = world.getBlockEntity(pos) as PlacerBlockEntity
+        return SimpleMenuProvider({ containerId, playerInventory, player ->
+            blockEntity.createMenu(containerId, playerInventory, player)
+        }, blockEntity.displayName)
+    }
 }

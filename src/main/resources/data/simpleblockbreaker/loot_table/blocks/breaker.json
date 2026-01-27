@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "simpleblockbreaker:breaker"
+          "name": "simple_block_breaker:breaker"
         }
       ],
       "conditions": [

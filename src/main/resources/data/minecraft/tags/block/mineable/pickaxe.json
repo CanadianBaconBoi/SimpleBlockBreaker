@@ -1,7 +1,7 @@
 {
   "replace": false,
   "values": [
-    "simpleblockbreaker:breaker",
-    "simpleblockbreaker:placer"
+    "simple_block_breaker:breaker",
+    "simple_block_breaker:placer"
   ]
 }

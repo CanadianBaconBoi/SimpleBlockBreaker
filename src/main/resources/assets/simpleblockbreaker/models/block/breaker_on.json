@@ -1,6 +1,0 @@
-{
-  "parent": "simpleblockbreaker:block/breaker",
-  "textures": {
-    "front": "simpleblockbreaker:block/breaker_front_on"
-  }
-}

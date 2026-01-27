@@ -1,28 +1,45 @@
 package net.cdnbcn.simpleblockbreaker.block.entity
 
+import net.cdnbcn.simpleblockbreaker.BlockBreakerMod
 import net.cdnbcn.simpleblockbreaker.block.BlockTypes
-import net.fabricmc.fabric.api.`object`.builder.v1.block.entity.FabricBlockEntityTypeBuilder
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.registry.Registries
-import net.minecraft.registry.Registry
-import net.minecraft.util.Identifier
-import net.minecraft.util.math.BlockPos
+import net.minecraft.core.registries.Registries
+import net.minecraft.world.level.block.entity.BlockEntityType
+import net.neoforged.neoforge.registries.DeferredRegister
 
 object BlockEntityTypes {
-    private fun <T: BlockEntityType<*>> register(path: String, blockEntityType: T): T {
-        return Registry.register(Registries.BLOCK_ENTITY_TYPE, Identifier.of("simpleblockbreaker", path), blockEntityType)
+    val BLOCK_ENTITY_TYPES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, BlockBreakerMod.ID)
+
+    val BREAKER_BLOCK = BLOCK_ENTITY_TYPES.register("breaker") { ->
+        //? =1.21.11 {
+        BlockEntityType(
+            ::BreakerBlockEntity,
+            false,
+            BlockTypes.BREAKER_BLOCK.get()
+        )
+        //?} elif =1.21.1 {
+        /*
+        BlockEntityType.Builder.of(
+            ::BreakerBlockEntity,
+            BlockTypes.BREAKER_BLOCK.get()
+        ).build(null)
+         *///?}
     }
 
-    val BREAKER_BLOCK = register(
-        "breaker",
-        FabricBlockEntityTypeBuilder.create({bp: BlockPos, bs: BlockState -> BreakerBlockEntity(bp, bs)}, BlockTypes.BREAKER_BLOCK.block).build()
-    )
-
-    val PLACER_BLOCK = register(
-        "placer",
-        FabricBlockEntityTypeBuilder.create({bp: BlockPos, bs: BlockState -> PlacerBlockEntity(bp, bs)}, BlockTypes.PLACER_BLOCK.block).build()
-    )
+    val PLACER_BLOCK = BLOCK_ENTITY_TYPES.register("placer") { ->
+        //? =1.21.11 {
+        BlockEntityType(
+            ::PlacerBlockEntity,
+            false,
+            BlockTypes.PLACER_BLOCK.get()
+        )
+        //?} elif =1.21.1 {
+        /*
+        BlockEntityType.Builder.of(
+            ::PlacerBlockEntity,
+            BlockTypes.PLACER_BLOCK.get()
+        ).build(null)
+         *///?}
+    }
 
     fun initialize() {
     }

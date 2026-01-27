@@ -1,80 +1,140 @@
 package net.cdnbcn.simpleblockbreaker.block.entity
 
-import net.cdnbcn.simpleblockbreaker.block.inventory.BreakerBlockInventory
-import net.cdnbcn.simpleblockbreaker.block.inventory.gui.BreakerGuiDescription
-import net.minecraft.block.BlockState
-import net.minecraft.block.InventoryProvider
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.block.entity.BlockEntityTicker
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.entity.player.PlayerInventory
-import net.minecraft.inventory.Inventories
-import net.minecraft.inventory.SidedInventory
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.registry.RegistryWrapper
-import net.minecraft.screen.NamedScreenHandlerFactory
-import net.minecraft.screen.ScreenHandler
-import net.minecraft.screen.ScreenHandlerContext
-import net.minecraft.text.Text
-import net.minecraft.util.collection.DefaultedList
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.world.World
-import net.minecraft.world.WorldAccess
+import net.cdnbcn.simpleblockbreaker.block.inventory.gui.BreakerBlockMenu
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.core.NonNullList
+import net.minecraft.network.chat.Component
+import net.minecraft.world.ContainerHelper
+import net.minecraft.world.WorldlyContainer
+import net.minecraft.world.WorldlyContainerHolder
+import net.minecraft.world.entity.player.Inventory
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.inventory.AbstractContainerMenu
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.LevelAccessor
+import net.minecraft.world.level.block.entity.BaseContainerBlockEntity
+import net.minecraft.world.level.block.entity.BlockEntityTicker
+import net.minecraft.world.level.block.state.BlockState
+//? if =1.21.11 {
+import net.minecraft.world.level.storage.ValueInput
+import net.minecraft.world.level.storage.ValueOutput
 
+//?} elif =1.21.1 {
+/*
+import net.minecraft.core.HolderLookup
+import net.minecraft.nbt.CompoundTag
+ *///?}
 
-class BreakerBlockEntity(pos: BlockPos, state: BlockState) : BlockEntity(BlockEntityTypes.BREAKER_BLOCK, pos, state), BreakerBlockInventory, SidedInventory,
-    NamedScreenHandlerFactory {
-    private val items: DefaultedList<ItemStack> = DefaultedList.ofSize(9, ItemStack.EMPTY)
-    override fun getItems(): DefaultedList<ItemStack> = items
+class BreakerBlockEntity(pos: BlockPos, state: BlockState) :
+    BaseContainerBlockEntity(BlockEntityTypes.BREAKER_BLOCK.get(), pos, state), WorldlyContainer {
+    private var items: NonNullList<ItemStack> = NonNullList.withSize(9, ItemStack.EMPTY)
+    public override fun getItems(): NonNullList<ItemStack> = items
+    override fun setItems(items: NonNullList<ItemStack>) {
+        this.items = items
+    }
 
-    override fun size(): Int {
+    override fun getContainerSize(): Int {
         return 9
     }
 
-    override fun readNbt(nbt: NbtCompound?, registries: RegistryWrapper.WrapperLookup?) {
-        super.readNbt(nbt, registries)
-        Inventories.readNbt(nbt, items, registries)
-    }
-
-    override fun writeNbt(nbt: NbtCompound?, registries: RegistryWrapper.WrapperLookup?) {
-        Inventories.writeNbt(nbt, items, registries)
-        return super.writeNbt(nbt, registries)
-    }
-
-    override fun markDirty() {
-        super<BlockEntity>.markDirty()
-    }
-
-    override fun getAvailableSlots(side: Direction?): IntArray {
-        return IntArray(9) {i -> i}
-    }
-
-    override fun canInsert(slot: Int, stack: ItemStack?, dir: Direction?): Boolean {
+    override fun isEmpty(): Boolean {
+        for (i in items) {
+            if (!i.isEmpty) {
+                return false
+            }
+        }
         return true
     }
 
-    override fun canExtract(slot: Int, stack: ItemStack?, dir: Direction?): Boolean {
+    override fun getItem(slot: Int): ItemStack {
+        return items[slot]
+    }
+
+    override fun removeItem(slot: Int, amount: Int): ItemStack {
+        val stack = ContainerHelper.removeItem(this.items, slot, amount)
+        this.setChanged()
+        return stack
+    }
+
+    override fun removeItemNoUpdate(slot: Int): ItemStack {
+        val stack = ContainerHelper.takeItem(this.items, slot)
+        this.setChanged()
+        return stack
+
+    }
+
+    override fun setItem(slot: Int, stack: ItemStack) {
+        stack.limitSize(this.getMaxStackSize(stack))
+        this.items[slot] = stack
+        this.setChanged()
+    }
+
+    override fun stillValid(p0: Player): Boolean {
         return true
     }
 
-    companion object: BlockEntityTicker<BreakerBlockEntity>, InventoryProvider {
-        override fun tick(world: World, pos: BlockPos, state: BlockState, blockEntity: BreakerBlockEntity) {
+    //? if =1.21.11 {
+    override fun loadAdditional(data: ValueInput) {
+        super.loadAdditional(data)
+        ContainerHelper.loadAllItems(data, items)
+    }
+
+    override fun saveAdditional(data: ValueOutput) {
+        super.saveAdditional(data)
+        ContainerHelper.saveAllItems(data, items)
+    }
+    //?} elif =1.21.1 {
+    /*
+    override fun loadAdditional(data: CompoundTag, registries: HolderLookup.Provider) {
+        super.loadAdditional(data, registries)
+        ContainerHelper.loadAllItems(data, items, registries)
+    }
+
+    override fun saveAdditional(data: CompoundTag, registries: HolderLookup.Provider) {
+        super.saveAdditional(data, registries)
+        ContainerHelper.saveAllItems(data, items, registries)
+    }
+     *///?}
+
+    override fun getSlotsForFace(side: Direction): IntArray {
+        return IntArray(9) { i -> i }
+    }
+
+    override fun canPlaceItemThroughFace(slot: Int, stack: ItemStack, dir: Direction?): Boolean {
+        return true
+    }
+
+    override fun canTakeItemThroughFace(slot: Int, stack: ItemStack, dir: Direction): Boolean {
+        return true
+    }
+
+    companion object : BlockEntityTicker<BreakerBlockEntity>, WorldlyContainerHolder {
+        override fun tick(world: Level, pos: BlockPos, state: BlockState, blockEntity: BreakerBlockEntity) {
         }
 
-        override fun getInventory(state: BlockState, world: WorldAccess, pos: BlockPos): SidedInventory? {
+        override fun getContainer(state: BlockState, world: LevelAccessor, pos: BlockPos): WorldlyContainer {
             val blockEntity = world.getBlockEntity(pos)
-            if (blockEntity !is BreakerBlockEntity) return null
+            if (blockEntity !is BreakerBlockEntity) return null!!
             return blockEntity
         }
     }
 
-    override fun createMenu(syncId: Int, playerInventory: PlayerInventory, player: PlayerEntity): ScreenHandler {
-        return BreakerGuiDescription(syncId, playerInventory, ScreenHandlerContext.create(world, pos))
+    override fun createMenu(containerId: Int, inventory: Inventory): AbstractContainerMenu {
+        return BreakerBlockMenu(containerId, inventory, this)
     }
 
-    override fun getDisplayName(): Text {
-        return Text.literal("Block Breaker")
+    override fun getDisplayName(): Component {
+        return Component.translatable("block.simple_block_breaker.breaker")
+    }
+
+    override fun getDefaultName(): Component {
+        return Component.literal("Block Breaker")
+    }
+
+    override fun clearContent() {
+        items.clear()
+        this.setChanged()
     }
 }
