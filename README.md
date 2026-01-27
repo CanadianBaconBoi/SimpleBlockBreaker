@@ -5,7 +5,7 @@
 [![Curseforge](https://cf.way2muchnoise.eu/1227573.svg)](https://www.curseforge.com/minecraft/mc-mods/simple-block-breaker)
 
 ## Install
-This mod requires [Fabric Language Kotlin](https://minecraft.curseforge.com/projects/fabric-language-kotlin) and [Fabric API](https://www.curseforge.com/minecraft/mc-mods/fabric-api)
+This mod requires [Kotlin For Forge](https://www.curseforge.com/minecraft/mc-mods/kotlin-for-forge)
 
 Latest release can be downloaded [Here](https://github.com/CanadianBaconBoi/SimpleBlockBreaker/releases/latest)
 
