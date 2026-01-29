@@ -32,6 +32,13 @@ repositories {
         name = "Kotlin for Forge"
         setUrl("https://thedarkcolour.github.io/KotlinForForge/")
     }
+
+    maven {
+        name = "ParchmentMC"
+        setUrl("https://maven.parchmentmc.org")
+    }
+
+    mavenCentral()
 }
 
 dependencies {
@@ -40,6 +47,11 @@ dependencies {
 
 neoForge {
     version = property("deps.neoforge") as String
+
+    parchment {
+        minecraftVersion = sc.current.version
+        mappingsVersion = property("deps.parchment_mapping") as String
+    }
 
     runs {
         register("client") {
