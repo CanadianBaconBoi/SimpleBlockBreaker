@@ -134,6 +134,11 @@ publishMods {
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
 
+        clientRequired = true
+        serverRequired = true
+
+        this.javaVersions = listOf(JavaVersion.VERSION_21)
+
         requires(property("curseforge.kotlin_for_forge.slug") as String)
     }
 }
