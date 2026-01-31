@@ -122,12 +122,19 @@ publishMods {
         projectId = property("publish.modrinth") as String
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
+
+        requires {
+            id = property("modrinth.kotlin_for_forge.id") as String
+            version = property("modrinth.kotlin_for_forge.version") as String
+        }
     }
 
     curseforge {
         projectId = property("publish.curseforge") as String
         accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
         minecraftVersions.addAll(property("mod.mc_targets").toString().split(' '))
+
+        requires(property("curseforge.kotlin_for_forge.slug") as String)
     }
 }
 
