@@ -30,13 +30,20 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
  *///?}
 
-abstract class BaseBlockEntity<T: BlockEntity>(bet: BlockEntityType<T>, pos: BlockPos, state: BlockState, val translatableName: Component, val defaultScreenName: Component, val menuSupplier: (Int, Inventory, Container) -> AbstractContainerMenu) : BaseContainerBlockEntity(bet, pos, state), WorldlyContainer {
+abstract class BaseBlockEntity<T : BlockEntity>(
+    bet: BlockEntityType<T>,
+    pos: BlockPos,
+    state: BlockState,
+    val translatableName: Component,
+    val defaultScreenName: Component,
+    val menuSupplier: (Int, Inventory, Container) -> AbstractContainerMenu
+) : BaseContainerBlockEntity(bet, pos, state), WorldlyContainer {
     fun getRandomSlot(random: RandomSource): Int {
         var i = -1
         var j = 1
 
-        for (k in this.items.indices) {
-            if (!this.items[k].isEmpty && random.nextInt(j++) == 0) {
+        for (k in this._items.indices) {
+            if (!this._items[k].isEmpty && random.nextInt(j++) == 0) {
                 i = k
             }
         }
@@ -55,37 +62,26 @@ abstract class BaseBlockEntity<T: BlockEntity>(bet: BlockEntityType<T>, pos: Blo
         }
     }
 
-    private var items: NonNullList<ItemStack> = NonNullList.withSize(9, ItemStack.EMPTY)
-    public override fun getItems(): NonNullList<ItemStack> = items
+    private var _items: NonNullList<ItemStack> = NonNullList.withSize(9, ItemStack.EMPTY)
+    public override fun getItems(): NonNullList<ItemStack> = _items
     override fun setItems(items: NonNullList<ItemStack>) {
-        this.items = items
+        this._items = items
     }
 
-    override fun getContainerSize(): Int {
-        return 9
-    }
+    override fun getContainerSize(): Int = 9
 
-    override fun isEmpty(): Boolean {
-        for (i in items) {
-            if (!i.isEmpty) {
-                return false
-            }
-        }
-        return true
-    }
+    override fun isEmpty(): Boolean = _items.all { item -> item.isEmpty }
 
-    override fun getItem(slot: Int): ItemStack {
-        return items[slot]
-    }
+    override fun getItem(slot: Int): ItemStack = _items[slot]
 
     override fun removeItem(slot: Int, amount: Int): ItemStack {
-        val stack = ContainerHelper.removeItem(this.items, slot, amount)
+        val stack = ContainerHelper.removeItem(this._items, slot, amount)
         this.setChanged()
         return stack
     }
 
     override fun removeItemNoUpdate(slot: Int): ItemStack {
-        val stack = ContainerHelper.takeItem(this.items, slot)
+        val stack = ContainerHelper.takeItem(this._items, slot)
         this.setChanged()
         return stack
 
@@ -93,23 +89,21 @@ abstract class BaseBlockEntity<T: BlockEntity>(bet: BlockEntityType<T>, pos: Blo
 
     override fun setItem(slot: Int, stack: ItemStack) {
         stack.limitSize(this.getMaxStackSize(stack))
-        this.items[slot] = stack
+        this._items[slot] = stack
         this.setChanged()
     }
 
-    override fun stillValid(p0: Player): Boolean {
-        return true
-    }
+    override fun stillValid(p0: Player): Boolean = true
 
     //? if =1.21.11 {
     override fun loadAdditional(data: ValueInput) {
         super.loadAdditional(data)
-        ContainerHelper.loadAllItems(data, items)
+        ContainerHelper.loadAllItems(data, _items)
     }
 
     override fun saveAdditional(data: ValueOutput) {
         super.saveAdditional(data)
-        ContainerHelper.saveAllItems(data, items)
+        ContainerHelper.saveAllItems(data, _items)
     }
     //?} elif =1.21.1 {
     /*
@@ -124,32 +118,21 @@ abstract class BaseBlockEntity<T: BlockEntity>(bet: BlockEntityType<T>, pos: Blo
     }
      *///?}
 
-    override fun getSlotsForFace(side: Direction): IntArray {
-        return IntArray(9) { i -> i }
-    }
+    override fun getSlotsForFace(side: Direction): IntArray = IntArray(9) { i -> i }
 
-    override fun canPlaceItemThroughFace(slot: Int, stack: ItemStack, dir: Direction?): Boolean {
-        return true
-    }
+    override fun canPlaceItemThroughFace(slot: Int, stack: ItemStack, dir: Direction?): Boolean = true
 
-    override fun canTakeItemThroughFace(slot: Int, stack: ItemStack, dir: Direction): Boolean {
-        return true
-    }
+    override fun canTakeItemThroughFace(slot: Int, stack: ItemStack, dir: Direction): Boolean = true
 
-    override fun createMenu(containerId: Int, inventory: Inventory): AbstractContainerMenu {
-        return menuSupplier(containerId, inventory, this)
-    }
+    override fun createMenu(containerId: Int, inventory: Inventory): AbstractContainerMenu =
+        menuSupplier(containerId, inventory, this)
 
-    override fun getDisplayName(): Component {
-        return translatableName
-    }
+    override fun getDisplayName(): Component = translatableName
 
-    override fun getDefaultName(): Component {
-        return defaultScreenName
-    }
+    override fun getDefaultName(): Component = defaultScreenName
 
     override fun clearContent() {
-        items.clear()
+        _items.clear()
         this.setChanged()
     }
 }

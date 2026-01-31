@@ -79,15 +79,13 @@ class BlockBreakerMod(container: ModContainer) {
     }
 
     private fun loadConfig(event: ModConfigEvent.Loading) {
-        if (event.config.modId != ID)
-            return
+        if (event.config.modId != ID) return
         LOGGER.info("Loading config")
         PROCESSED_CONFIG = ProcessedConfig.fromConfig(CONFIG)
     }
 
     private fun reloadConfig(event: ModConfigEvent.Reloading) {
-        if (event.config.modId != ID)
-            return
+        if (event.config.modId != ID) return
         LOGGER.info("Reloading config")
         PROCESSED_CONFIG = ProcessedConfig.fromConfig(CONFIG)
     }
@@ -164,9 +162,7 @@ class BlockBreakerMod(container: ModContainer) {
             fun <T : DefaultedRegistry<I>, I> convertStringListToRegistrySet(
                 input: List<String>,
                 registry: T
-            ): HashSet<I> {
-                return convertStringListToRegistrySet(input, registry) { i -> i }
-            }
+            ): HashSet<I> = convertStringListToRegistrySet(input, registry) { i -> i }
         }
     }
 

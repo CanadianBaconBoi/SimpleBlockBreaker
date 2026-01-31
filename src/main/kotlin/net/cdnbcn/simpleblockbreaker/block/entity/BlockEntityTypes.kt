@@ -20,7 +20,11 @@ object BlockEntityTypes {
     }
 
 
-    fun <T: BlockEntity>newBlockEntity(factory: BlockEntityType.BlockEntitySupplier<T>, block: Block, onlyOpCanSetNbt: Boolean = false): BlockEntityType<T> =
+    fun <T : BlockEntity> newBlockEntity(
+        factory: BlockEntityType.BlockEntitySupplier<T>,
+        block: Block,
+        onlyOpCanSetNbt: Boolean = false
+    ): BlockEntityType<T> =
         //? if =1.21.11 {
         BlockEntityType(factory, onlyOpCanSetNbt, block)
         //? } elif =1.21.1 {

@@ -9,7 +9,7 @@ import net.minecraft.world.inventory.MenuType
 import net.minecraft.world.inventory.Slot
 import net.minecraft.world.item.ItemStack
 
-class BreakerBlockMenu : AbstractContainerMenu {
+class BaseMenu : AbstractContainerMenu {
     private val breaker: Container
 
     constructor(syncId: Int, playerInventory: Inventory) : this(syncId, playerInventory, SimpleContainer(9))
@@ -34,31 +34,27 @@ class BreakerBlockMenu : AbstractContainerMenu {
 
     //? if =1.21.1 {
     /*
-    private fun addInventoryHotbarSlots(p_363100_: Container, p_362615_: Int, p_365310_: Int) {
+    private fun addInventoryHotbarSlots(container: Container, x: Int, y: Int) {
         for (i in 0..8) {
-            this.addSlot(Slot(p_363100_, i, p_362615_ + i * 18, p_365310_))
+            this.addSlot(Slot(container, i, x + i * 18, y))
         }
     }
 
-    private fun addInventoryExtendedSlots(p_360848_: Container, p_361259_: Int, p_361419_: Int) {
+    private fun addInventoryExtendedSlots(container: Container, x: Int, y: Int) {
         for (i in 0..2) {
             for (j in 0..8) {
-                this.addSlot(Slot(p_360848_, j + (i + 1) * 9, p_361259_ + j * 18, p_361419_ + i * 18))
+                this.addSlot(Slot(container, j + (i + 1) * 9, x + j * 18, y + i * 18))
             }
         }
     }
 
-    private fun addStandardInventorySlots(p_362897_: Container, p_364704_: Int, p_361176_: Int) {
-        this.addInventoryExtendedSlots(p_362897_, p_364704_, p_361176_)
-        val i = 4
-        val j = 58
-        this.addInventoryHotbarSlots(p_362897_, p_364704_, p_361176_ + 58)
+    private fun addStandardInventorySlots(container: Container, x: Int, y: Int) {
+        this.addInventoryExtendedSlots(container, x, y)
+        this.addInventoryHotbarSlots(container, x, y + 58)
     }
      *///?}
 
-    override fun stillValid(player: Player): Boolean {
-        return this.breaker.stillValid(player)
-    }
+    override fun stillValid(player: Player): Boolean = this.breaker.stillValid(player)
 
     override fun quickMoveStack(player: Player, slotIdx: Int): ItemStack {
         var itemStack = ItemStack.EMPTY

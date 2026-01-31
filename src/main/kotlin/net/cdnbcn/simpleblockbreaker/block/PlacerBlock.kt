@@ -8,7 +8,8 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.util.RandomSource
-import net.minecraft.world.*
+import net.minecraft.world.InteractionHand
+import net.minecraft.world.InteractionResult
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.context.UseOnContext
@@ -16,7 +17,8 @@ import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.BlockHitResult
 import net.neoforged.neoforge.common.util.FakePlayer
 
-class PlacerBlock(settings: Properties) : BaseBlock<PlacerBlock, PlacerBlockEntity>(settings, ::PlacerBlock, ::PlacerBlockEntity) {
+class PlacerBlock(settings: Properties) :
+    BaseBlock<PlacerBlock, PlacerBlockEntity>(settings, ::PlacerBlock, ::PlacerBlockEntity) {
     override fun tick(state: BlockState, world: ServerLevel, pos: BlockPos, random: RandomSource) {
         val blockEntity = world.getBlockEntity(pos)
         if (blockEntity !is PlacerBlockEntity) return

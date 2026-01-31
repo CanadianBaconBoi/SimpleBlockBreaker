@@ -1,6 +1,6 @@
 package net.cdnbcn.simpleblockbreaker
 
-import net.cdnbcn.simpleblockbreaker.block.inventory.gui.BreakerBlockMenu
+import net.cdnbcn.simpleblockbreaker.block.inventory.gui.BaseMenu
 import net.minecraft.core.registries.Registries
 import net.minecraft.world.flag.FeatureFlags
 import net.minecraft.world.inventory.MenuType
@@ -11,7 +11,7 @@ object ScreenHandlerTypes {
     val MENUS = DeferredRegister.create(Registries.MENU, BlockBreakerMod.ID)
 
     @Suppress("unused")
-    val BREAKER_MENU = MENUS.register("breaker") { -> MenuType(::BreakerBlockMenu, FeatureFlags.DEFAULT_FLAGS) }
+    val BASE_MENU = MENUS.register("base_menu") { -> MenuType(::BaseMenu, FeatureFlags.DEFAULT_FLAGS) }
 
     fun initialize() {}
 }

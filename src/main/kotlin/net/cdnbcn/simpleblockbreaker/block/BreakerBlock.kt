@@ -14,7 +14,8 @@ import net.minecraft.world.level.storage.loot.LootParams
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams
 import kotlin.math.min
 
-class BreakerBlock(settings: Properties) : BaseBlock<BreakerBlock, BreakerBlockEntity>(settings, ::BreakerBlock, ::BreakerBlockEntity) {
+class BreakerBlock(settings: Properties) :
+    BaseBlock<BreakerBlock, BreakerBlockEntity>(settings, ::BreakerBlock, ::BreakerBlockEntity) {
     override fun tick(state: BlockState, world: ServerLevel, pos: BlockPos, random: RandomSource) {
         val blockEntity = world.getBlockEntity(pos)
         if (blockEntity !is BreakerBlockEntity) return
@@ -25,22 +26,17 @@ class BreakerBlock(settings: Properties) : BaseBlock<BreakerBlock, BreakerBlockE
 
         val config = BlockBreakerMod.PROCESSED_CONFIG
 
-        if (blockState.isAir) {
-            return
-        }
-        val flag = config.breakerListType == BlockBreakerMod.Config.ListType.WHITELIST
-        if (config.breakerListItems.contains(blockState.block) != flag) {
-            return
-        }
+        if (blockState.isAir) return
 
+        val flag = config.breakerListType == BlockBreakerMod.Config.ListType.WHITELIST
+        if (config.breakerListItems.contains(blockState.block) != flag) return
+
+        // Blocks with a negative destroy time are unbreakable
         if (blockState.block.defaultDestroyTime() < 0.0f) {
-            if (!config.canBreakUnbreakable) {
-                return
-            }
+            if (!config.canBreakUnbreakable) return
+
             val flag1 = config.unbreakableListType == BlockBreakerMod.Config.ListType.WHITELIST
-            if (config.unbreakableListItems.contains(blockState.block) != flag1) {
-                return
-            }
+            if (config.unbreakableListItems.contains(blockState.block) != flag1) return
         }
 
         val stacks = blockState.getDrops(
@@ -49,7 +45,7 @@ class BreakerBlock(settings: Properties) : BaseBlock<BreakerBlock, BreakerBlockE
         )
         for (stack in stacks) {
             val items = blockEntity.getItems()
-            for (i in 0..<9) {
+            for (i in 0..8) {
                 val slot = items[i]
                 if (stack.item == slot.item && slot.count < slot.maxStackSize) {
                     val maxTake = slot.maxStackSize - slot.count

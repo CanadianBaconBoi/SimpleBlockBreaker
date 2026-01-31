@@ -27,7 +27,11 @@ import net.minecraft.world.level.block.state.properties.Property
 import net.minecraft.world.level.redstone.Orientation
 import net.minecraft.world.phys.BlockHitResult
 
-abstract class BaseBlock<B: Block, E: BaseBlockEntity<E>>(settings: Properties, val blockFactory: (Properties) -> B, val entityFactory: (BlockPos, BlockState) -> E) : Block(settings), EntityBlock {
+abstract class BaseBlock<B : Block, E : BaseBlockEntity<E>>(
+    settings: Properties,
+    val blockFactory: (Properties) -> B,
+    val entityFactory: (BlockPos, BlockState) -> E
+) : Block(settings), EntityBlock {
     companion object {
         val POWERED: BooleanProperty = BlockStateProperties.POWERED
         val FACING: EnumProperty<Direction> = BlockStateProperties.FACING
@@ -40,13 +44,9 @@ abstract class BaseBlock<B: Block, E: BaseBlockEntity<E>>(settings: Properties, 
         })
     }
 
-    override fun codec(): MapCodec<out B> {
-        return simpleCodec(blockFactory)
-    }
+    override fun codec(): MapCodec<out B> = simpleCodec(blockFactory)
 
-    override fun newBlockEntity(pos: BlockPos, state: BlockState): E {
-        return entityFactory(pos, state)
-    }
+    override fun newBlockEntity(pos: BlockPos, state: BlockState): E = entityFactory(pos, state)
 
     override fun useWithoutItem(
         state: BlockState,
@@ -75,17 +75,13 @@ abstract class BaseBlock<B: Block, E: BaseBlockEntity<E>>(settings: Properties, 
     }
      *///?}
 
-    public override fun hasAnalogOutputSignal(state: BlockState): Boolean {
-        return true
-    }
+    public override fun hasAnalogOutputSignal(state: BlockState): Boolean = true
 
     public override fun getAnalogOutputSignal(
         state: BlockState, world: Level, pos: BlockPos,
         //? if =1.21.11
         direction: Direction
-    ): Int {
-        return AbstractContainerMenu.getRedstoneSignalFromBlockEntity(world.getBlockEntity(pos))
-    }
+    ): Int = AbstractContainerMenu.getRedstoneSignalFromBlockEntity(world.getBlockEntity(pos))
 
 
     override fun neighborChanged(
@@ -112,21 +108,18 @@ abstract class BaseBlock<B: Block, E: BaseBlockEntity<E>>(settings: Properties, 
         }
     }
 
-    override fun getStateForPlacement(ctx: BlockPlaceContext): BlockState {
-        return defaultBlockState().setValue(FACING, ctx.nearestLookingDirection.opposite)
-    }
+    override fun getStateForPlacement(ctx: BlockPlaceContext): BlockState =
+        defaultBlockState().setValue(FACING, ctx.nearestLookingDirection.opposite)
 
     override fun createBlockStateDefinition(builder: StateDefinition.Builder<Block, BlockState>) {
         builder.add(*arrayOf<Property<*>>(FACING, POWERED))
     }
 
-    override fun rotate(state: BlockState, rotation: Rotation): BlockState {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)))
-    }
+    override fun rotate(state: BlockState, rotation: Rotation): BlockState =
+        state.setValue(FACING, rotation.rotate(state.getValue(FACING)))
 
-    override fun mirror(state: BlockState, mirror: Mirror): BlockState {
-        return state.setValue(FACING, mirror.rotation().rotate(state.getValue(FACING)))
-    }
+    override fun mirror(state: BlockState, mirror: Mirror): BlockState =
+        state.setValue(FACING, mirror.rotation().rotate(state.getValue(FACING)))
 
     public override fun getMenuProvider(state: BlockState, world: Level, pos: BlockPos): MenuProvider {
         val blockEntity = world.getBlockEntity(pos) as BaseBlockEntity<*>
