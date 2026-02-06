@@ -2,5 +2,7 @@
   "block.simple_block_breaker.breaker": "Block Breaker",
   "block.simple_block_breaker.placer": "Block Placer",
   "item.simple_block_breaker.breaker": "Block Breaker",
-  "item.simple_block_breaker.placer": "Block Placer"
+  "item.simple_block_breaker.placer": "Block Placer",
+  "tooltip.simple_block_breaker.tool": "Tool: %s",
+  "tooltip.simple_block_breaker.tool.none": "None"
 }

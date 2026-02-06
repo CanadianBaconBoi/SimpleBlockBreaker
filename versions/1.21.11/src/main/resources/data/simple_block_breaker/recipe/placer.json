@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "PRP",
+    "###"
+  ],
+  "key": {
+    "#": "minecraft:cobblestone",
+    "P": "minecraft:piston",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "simple_block_breaker:placer",
+    "count": 1
+  }
+}

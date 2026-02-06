@@ -4,14 +4,14 @@ import com.mojang.authlib.GameProfile
 import net.cdnbcn.simpleblockbreaker.block.BlockItemTypes
 import net.cdnbcn.simpleblockbreaker.block.BlockTypes
 import net.cdnbcn.simpleblockbreaker.block.entity.BlockEntityTypes
+import net.cdnbcn.simpleblockbreaker.item.BreakerToolComponent
+import net.cdnbcn.simpleblockbreaker.recipe.RecipeSerializerTypes
 import net.minecraft.core.DefaultedRegistry
 import net.minecraft.core.registries.BuiltInRegistries
-//? if =1.21.11
-import net.minecraft.resources.Identifier
-//? if =1.21.1
-// import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.CreativeModeTabs
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Block
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.ModContainer
@@ -26,6 +26,10 @@ import org.apache.logging.log4j.Logger
 import thedarkcolour.kotlinforforge.neoforge.forge.MOD_BUS
 import java.util.*
 
+//? if >=1.21.11
+import net.minecraft.resources.Identifier
+//? if <=1.21.1
+// import net.minecraft.resources.ResourceLocation
 
 @Mod(BlockBreakerMod.ID)
 class BlockBreakerMod(container: ModContainer) {
@@ -35,16 +39,12 @@ class BlockBreakerMod(container: ModContainer) {
         val FAKE_PLAYER_PROFILE =
             GameProfile(UUID.fromString("a71ac3cb-1c21-47c9-9219-aa4268e5aed0"), "BlockBreakerPlayer")
 
-        var INSTANCE: BlockBreakerMod? = null
-
-        lateinit var CONFIG: Config
-        lateinit var CONFIG_SPEC: ModConfigSpec
+        private lateinit var CONFIG: Config
+        private lateinit var CONFIG_SPEC: ModConfigSpec
         lateinit var PROCESSED_CONFIG: ProcessedConfig
     }
 
     init {
-        INSTANCE = this
-
         MOD_BUS.addListener(::loadConfig)
         MOD_BUS.addListener(::reloadConfig)
         MOD_BUS.addListener(::buildContents)
@@ -53,6 +53,7 @@ class BlockBreakerMod(container: ModContainer) {
         BlockItemTypes.BLOCK_ITEMS.register(MOD_BUS)
         BlockEntityTypes.BLOCK_ENTITY_TYPES.register(MOD_BUS)
         ScreenHandlerTypes.MENUS.register(MOD_BUS)
+        RecipeSerializerTypes.RECIPE_SERIALIZERS.register(MOD_BUS)
 
         val pair = ModConfigSpec.Builder().configure(::Config)
         CONFIG = pair.getLeft()
@@ -68,12 +69,16 @@ class BlockBreakerMod(container: ModContainer) {
         BlockItemTypes.initialize()
         BlockEntityTypes.initialize()
         ScreenHandlerTypes.initialize()
+        RecipeSerializerTypes.initialize()
     }
 
-    fun buildContents(event: BuildCreativeModeTabContentsEvent) {
+    private fun buildContents(event: BuildCreativeModeTabContentsEvent) {
         // Is this the tab we want to add to?
         if (event.tabKey === CreativeModeTabs.REDSTONE_BLOCKS) {
-            event.accept(BlockItemTypes.BREAKER_BLOCK_ITEM.get())
+            val breakerStack = ItemStack(BlockItemTypes.BREAKER_BLOCK_ITEM.get())
+            BreakerToolComponent.withTool(breakerStack, ItemStack(Items.NETHERITE_PICKAXE))
+            event.accept(breakerStack)
+
             event.accept(BlockItemTypes.PLACER_BLOCK_ITEM.get())
         }
     }
@@ -138,14 +143,16 @@ class BlockBreakerMod(container: ModContainer) {
                 val ret = HashSet<R>()
                 for (item in input) {
                     registry.
-                        //? if =1.21.11
+                    //? if >=1.21.11 {
                     get(
-                        //? if =1.21.1
-                        // getHolder(
-                        //? if =1.21.11
+                    //? } elif <=1.21.1 {
+                    // getHolder(
+                    //?}
+                        //? if >=1.21.11 {
                         Identifier
-                            //? if =1.21.1
-                            // ResourceLocation
+                        //? } elif <=1.21.1 {
+                        // ResourceLocation
+                        //?}
                             .bySeparator(item, ':')
                     ).ifPresent {
                         val item = it.value()

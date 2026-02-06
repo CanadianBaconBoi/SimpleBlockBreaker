@@ -13,5 +13,6 @@ object ScreenHandlerTypes {
     @Suppress("unused")
     val BASE_MENU = MENUS.register("base_menu") { -> MenuType(::BaseMenu, FeatureFlags.DEFAULT_FLAGS) }
 
+    //Dead method call causes access to occur thus initializing the vals
     fun initialize() {}
 }

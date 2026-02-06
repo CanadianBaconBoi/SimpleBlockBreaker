@@ -1,0 +1,19 @@
+{
+  "type": "simple_block_breaker:breaker_with_tool",
+  "pattern": [
+    "###",
+    "PRI",
+    "###"
+  ],
+  "key": {
+    "#": { "item": "minecraft:cobblestone" },
+    "P": { "item": "minecraft:piston" },
+    "R": { "item": "minecraft:redstone" },
+    "I": { "tag": "minecraft:pickaxes" }
+  },
+  "result": {
+    "id": "simple_block_breaker:breaker",
+    "count": 1
+  },
+  "category": "redstone"
+}

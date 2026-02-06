@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "simple_block_breaker:breaker_with_tool",
   "pattern": [
     "###",
     "PRI",
@@ -9,7 +9,7 @@
     "#": "minecraft:cobblestone",
     "P": "minecraft:piston",
     "R": "minecraft:redstone",
-    "I": "minecraft:iron_pickaxe"
+    "I": "#minecraft:pickaxes"
   },
   "result": {
     "id": "simple_block_breaker:breaker",

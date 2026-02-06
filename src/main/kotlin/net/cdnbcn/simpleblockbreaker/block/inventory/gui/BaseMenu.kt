@@ -23,7 +23,7 @@ class BaseMenu : AbstractContainerMenu {
 
     }
 
-    fun add3x3GridSlots(container: Container, x: Int, y: Int) {
+    private fun add3x3GridSlots(container: Container, x: Int, y: Int) {
         for (i in 0..2) {
             for (j in 0..2) {
                 val k = j + i * 3
@@ -32,20 +32,17 @@ class BaseMenu : AbstractContainerMenu {
         }
     }
 
-    //? if =1.21.1 {
+    //? if <=1.21.1 {
     /*
     private fun addInventoryHotbarSlots(container: Container, x: Int, y: Int) {
-        for (i in 0..8) {
+        for (i in 0..8)
             this.addSlot(Slot(container, i, x + i * 18, y))
-        }
     }
 
     private fun addInventoryExtendedSlots(container: Container, x: Int, y: Int) {
-        for (i in 0..2) {
-            for (j in 0..8) {
+        for (i in 0..2)
+            for (j in 0..8)
                 this.addSlot(Slot(container, j + (i + 1) * 9, x + j * 18, y + i * 18))
-            }
-        }
     }
 
     private fun addStandardInventorySlots(container: Container, x: Int, y: Int) {
@@ -75,9 +72,8 @@ class BaseMenu : AbstractContainerMenu {
                 slot.setChanged()
             }
 
-            if (slot.item.count == itemStack.count) {
+            if (slot.item.count == itemStack.count)
                 return ItemStack.EMPTY
-            }
 
             slot.onTake(player, slot.item)
         }

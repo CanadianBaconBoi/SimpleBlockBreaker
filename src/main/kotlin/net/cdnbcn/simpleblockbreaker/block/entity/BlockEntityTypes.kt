@@ -20,17 +20,17 @@ object BlockEntityTypes {
     }
 
 
-    fun <T : BlockEntity> newBlockEntity(
+    private fun <T : BlockEntity> newBlockEntity(
         factory: BlockEntityType.BlockEntitySupplier<T>,
         block: Block,
         onlyOpCanSetNbt: Boolean = false
     ): BlockEntityType<T> =
-        //? if =1.21.11 {
+        //? if >=1.21.11 {
         BlockEntityType(factory, onlyOpCanSetNbt, block)
-        //? } elif =1.21.1 {
+        //? } elif <=1.21.1 {
         // BlockEntityType.Builder.of(factory, block).build(null)
         //? }
 
-    fun initialize() {
-    }
+    //Dead method call causes access to occur thus initializing the vals
+    fun initialize() {}
 }

@@ -38,11 +38,20 @@ repositories {
         setUrl("https://maven.parchmentmc.org")
     }
 
+    maven {
+        name = "Jared's maven (JEI)"
+        setUrl("https://maven.blamejared.com/")
+    }
+
     mavenCentral()
 }
 
 dependencies {
     implementation("thedarkcolour:kotlinforforge-neoforge:${property("deps.kotlin_for_forge")}")
+    // compile against the JEI API but do not include it at runtime
+    compileOnly("mezz.jei:jei-${sc.current.version}-neoforge-api:${property("deps.jei")}")
+    // at runtime, use the full JEI jar for NeoForge
+    runtimeOnly("mezz.jei:jei-${sc.current.version}-neoforge:${property("deps.jei")}")
 }
 
 neoForge {
@@ -78,6 +87,8 @@ tasks {
         inputs.property("name", project.property("mod.name"))
         inputs.property("version", project.property("mod.version"))
         inputs.property("minecraft", project.property("mod.mc_dep"))
+        inputs.property("kff_ver", project.property("deps.kotlin_for_forge"))
+        inputs.property("jei_ver", project.property("deps.jei"))
 
         val props = mapOf(
             "id" to project.property("mod.id"),
@@ -85,6 +96,7 @@ tasks {
             "version" to project.property("mod.version"),
             "minecraft" to project.property("mod.mc_dep"),
             "kff_ver" to project.property("deps.kotlin_for_forge"),
+            "jei_ver" to project.property("deps.jei")
         )
 
         filesMatching("META-INF/neoforge.mods.toml") { expand(props) }

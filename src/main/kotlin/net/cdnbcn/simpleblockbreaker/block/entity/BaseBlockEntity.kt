@@ -8,62 +8,67 @@ import net.minecraft.util.RandomSource
 import net.minecraft.world.Container
 import net.minecraft.world.ContainerHelper
 import net.minecraft.world.WorldlyContainer
-import net.minecraft.world.WorldlyContainerHolder
 import net.minecraft.world.entity.player.Inventory
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.level.Level
-import net.minecraft.world.level.LevelAccessor
 import net.minecraft.world.level.block.entity.BaseContainerBlockEntity
 import net.minecraft.world.level.block.entity.BlockEntity
-import net.minecraft.world.level.block.entity.BlockEntityTicker
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockState
-//? if =1.21.11 {
+//? if >=1.21.11 {
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
-
-//?} elif =1.21.1 {
+//?} elif <=1.21.1 {
 /*
 import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
  *///?}
 
+/**
+ * Base container-based block entity with world interactions (comparator and such)
+ *
+ * @param T The type of the subclass extending from this block entity.
+ * @param bet Registered BlockEntityType associated with this Entity.
+ * @param pos The position of the block entity in the world.
+ * @param state The block state associated with the entity's position.
+ * @param translatableName The localized name of the block that is displayed to the player.
+ * @param defaultScreenName The default name presented when no translatable name is set for the player's locale.
+ * @param menuSupplier A function that creates the container menu. Params are the sync ID, player's inventory, and block's associated container
+ */
 abstract class BaseBlockEntity<T : BlockEntity>(
     bet: BlockEntityType<T>,
     pos: BlockPos,
     state: BlockState,
-    val translatableName: Component,
-    val defaultScreenName: Component,
-    val menuSupplier: (Int, Inventory, Container) -> AbstractContainerMenu
+    private val translatableName: Component,
+    private val defaultScreenName: Component,
+    private val menuSupplier: (Int, Inventory, Container) -> AbstractContainerMenu
 ) : BaseContainerBlockEntity(bet, pos, state), WorldlyContainer {
+
+    /**
+     * Selects a random non-empty slot.
+     *
+     * @param random an instance of `RandomSource` used to generate random numbers for slot selection.
+     * @return the index of the randomly selected non-empty slot, or -1 if all slots are empty.
+     */
     fun getRandomSlot(random: RandomSource): Int {
         var i = -1
         var j = 1
 
-        for (k in this._items.indices) {
-            if (!this._items[k].isEmpty && random.nextInt(j++) == 0) {
+        for (k in this._items.indices)
+            if (!this._items[k].isEmpty && random.nextInt(j++) == 0)
                 i = k
-            }
-        }
 
         return i
     }
 
-    companion object : BlockEntityTicker<BreakerBlockEntity>, WorldlyContainerHolder {
-        override fun tick(world: Level, pos: BlockPos, state: BlockState, blockEntity: BreakerBlockEntity) {
-        }
-
-        override fun getContainer(state: BlockState, world: LevelAccessor, pos: BlockPos): WorldlyContainer {
-            val blockEntity = world.getBlockEntity(pos)
-            if (blockEntity !is BreakerBlockEntity) return null!!
-            return blockEntity
-        }
+    companion object {
+        private val ALL_SLOTS: IntArray = intArrayOf(0, 1, 2, 3, 4, 5, 6, 7, 8)
     }
 
     private var _items: NonNullList<ItemStack> = NonNullList.withSize(9, ItemStack.EMPTY)
     public override fun getItems(): NonNullList<ItemStack> = _items
+
     override fun setItems(items: NonNullList<ItemStack>) {
         this._items = items
     }
@@ -84,7 +89,6 @@ abstract class BaseBlockEntity<T : BlockEntity>(
         val stack = ContainerHelper.takeItem(this._items, slot)
         this.setChanged()
         return stack
-
     }
 
     override fun setItem(slot: Int, stack: ItemStack) {
@@ -95,7 +99,7 @@ abstract class BaseBlockEntity<T : BlockEntity>(
 
     override fun stillValid(p0: Player): Boolean = true
 
-    //? if =1.21.11 {
+    //? if >=1.21.11 {
     override fun loadAdditional(data: ValueInput) {
         super.loadAdditional(data)
         ContainerHelper.loadAllItems(data, _items)
@@ -105,7 +109,7 @@ abstract class BaseBlockEntity<T : BlockEntity>(
         super.saveAdditional(data)
         ContainerHelper.saveAllItems(data, _items)
     }
-    //?} elif =1.21.1 {
+    //?} elif <=1.21.1 {
     /*
     override fun loadAdditional(data: CompoundTag, registries: HolderLookup.Provider) {
         super.loadAdditional(data, registries)
@@ -118,7 +122,7 @@ abstract class BaseBlockEntity<T : BlockEntity>(
     }
      *///?}
 
-    override fun getSlotsForFace(side: Direction): IntArray = IntArray(9) { i -> i }
+    override fun getSlotsForFace(side: Direction): IntArray = ALL_SLOTS
 
     override fun canPlaceItemThroughFace(slot: Int, stack: ItemStack, dir: Direction?): Boolean = true
 
@@ -132,7 +136,7 @@ abstract class BaseBlockEntity<T : BlockEntity>(
     override fun getDefaultName(): Component = defaultScreenName
 
     override fun clearContent() {
-        _items.clear()
+        _items.clear() // As this is a non-null list, clear will set the values to the default (ItemStack.EMPTY)
         this.setChanged()
     }
 }

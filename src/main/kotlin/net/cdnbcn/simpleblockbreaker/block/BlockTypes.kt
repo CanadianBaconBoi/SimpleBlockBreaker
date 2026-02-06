@@ -23,6 +23,6 @@ object BlockTypes {
         )
     }
 
-    fun initialize() {
-    }
+    //Dead method call causes access to occur thus initializing the vals
+    fun initialize() {}
 }
