@@ -12,7 +12,6 @@ import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.CreativeModeTabs
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.minecraft.world.level.block.Block
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.ModContainer
 import net.neoforged.fml.common.Mod
@@ -25,11 +24,16 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import thedarkcolour.kotlinforforge.neoforge.forge.MOD_BUS
 import java.util.*
+import kotlin.jvm.optionals.getOrElse
 
 //? if >=1.21.11
 import net.minecraft.resources.Identifier
-//? if <=1.21.1
-// import net.minecraft.resources.ResourceLocation
+
+//? if <=1.21.1 {
+/*
+ import net.minecraft.resources.ResourceLocation
+ typealias Identifier = ResourceLocation
+ *///?}
 
 @Mod(BlockBreakerMod.ID)
 class BlockBreakerMod(container: ModContainer) {
@@ -98,11 +102,11 @@ class BlockBreakerMod(container: ModContainer) {
     class ProcessedConfig(
         val canBreakUnbreakable: Boolean,
         val unbreakableListType: Config.ListType,
-        val unbreakableListItems: HashSet<Block>,
+        val unbreakableListItems: HashSet<Identifier>,
         val breakerListType: Config.ListType,
-        val breakerListItems: HashSet<Block>,
+        val breakerListItems: HashSet<Identifier>,
         val placerListType: Config.ListType,
-        val placerListItems: HashSet<Block>
+        val placerListItems: HashSet<Identifier>
     ) {
         companion object {
             fun fromConfig(config: Config): ProcessedConfig {
@@ -111,7 +115,7 @@ class BlockBreakerMod(container: ModContainer) {
                     config.unbreakableListType.get(),
                     convertStringListToRegistrySet(config.unbreakableListItems.get(), BuiltInRegistries.ITEM) {
                         return@convertStringListToRegistrySet if (it is BlockItem) {
-                            it.block
+                            BuiltInRegistries.BLOCK.getKey(it.block)
                         } else {
                             null
                         }
@@ -119,7 +123,7 @@ class BlockBreakerMod(container: ModContainer) {
                     config.breakerListType.get(),
                     convertStringListToRegistrySet(config.breakerListItems.get(), BuiltInRegistries.ITEM) {
                         return@convertStringListToRegistrySet if (it is BlockItem) {
-                            it.block
+                            BuiltInRegistries.BLOCK.getKey(it.block)
                         } else {
                             null
                         }
@@ -127,7 +131,7 @@ class BlockBreakerMod(container: ModContainer) {
                     config.placerListType.get(),
                     convertStringListToRegistrySet(config.placerListItems.get(), BuiltInRegistries.ITEM) {
                         return@convertStringListToRegistrySet if (it is BlockItem) {
-                            it.block
+                            BuiltInRegistries.BLOCK.getKey(it.block)
                         } else {
                             null
                         }
@@ -141,26 +145,22 @@ class BlockBreakerMod(container: ModContainer) {
                 typeGetter: (I) -> R?
             ): HashSet<R> {
                 val ret = HashSet<R>()
+
                 for (item in input) {
-                    registry.
-                    //? if >=1.21.11 {
-                    get(
-                    //? } elif <=1.21.1 {
-                    // getHolder(
-                    //?}
+                    val holder = registry.
                         //? if >=1.21.11 {
-                        Identifier
+                        get(
                         //? } elif <=1.21.1 {
-                        // ResourceLocation
+                        // getHolder(
                         //?}
+                        //? if >=1.21.11 {
+                            Identifier
+                            //? } elif <=1.21.1 {
+                            // ResourceLocation
+                            //?}
                             .bySeparator(item, ':')
-                    ).ifPresent {
-                        val item = it.value()
-                        val gotItem = typeGetter(item)
-                        if (gotItem != null) {
-                            ret.add(gotItem)
-                        }
-                    }
+                    ).getOrElse { continue }
+                    ret.add(typeGetter(holder.value()) ?: continue)
                 }
                 return ret
             }

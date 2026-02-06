@@ -9,6 +9,8 @@ import net.minecraft.world.level.block.state.BlockState
 //? if >=1.21.11 {
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
+import kotlin.jvm.optionals.getOrDefault
+
 //?} elif <=1.21.1 {
 /*
 import net.minecraft.core.HolderLookup
@@ -26,12 +28,12 @@ class BreakerBlockEntity(pos: BlockPos, state: BlockState) : BaseBlockEntity<Bre
     //? if >=1.21.11 {
     override fun saveAdditional(data: ValueOutput) {
         super.saveAdditional(data)
-        data.storeNullable("sbb_tool", ItemStack.CODEC, tool.takeIf { !it.isEmpty })
+        data.storeNullable("sbb_tool", ItemStack.CODEC, tool)
     }
 
     override fun loadAdditional(data: ValueInput) {
         super.loadAdditional(data)
-        this.tool = data.read("sbb_tool", ItemStack.CODEC).orElse(ItemStack.EMPTY)
+        this.tool = data.read("sbb_tool", ItemStack.CODEC).getOrDefault(ItemStack.EMPTY)
     }
     //?} elif <=1.21.1 {
     /*

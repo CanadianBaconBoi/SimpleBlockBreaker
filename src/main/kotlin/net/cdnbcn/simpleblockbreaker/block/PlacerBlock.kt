@@ -5,6 +5,7 @@ import net.cdnbcn.simpleblockbreaker.block.entity.BlockEntityTypes
 import net.cdnbcn.simpleblockbreaker.block.entity.PlacerBlockEntity
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
@@ -39,7 +40,7 @@ class PlacerBlock(settings: Properties) :
                 val block = (itemStack.item as BlockItem).block
                 val flag =
                     BlockBreakerMod.PROCESSED_CONFIG.placerListType == BlockBreakerMod.Config.ListType.WHITELIST
-                if (BlockBreakerMod.PROCESSED_CONFIG.placerListItems.contains(block) == flag) {
+                if (BlockBreakerMod.PROCESSED_CONFIG.placerListItems.contains(BuiltInRegistries.BLOCK.getKey(block)) == flag) {
                     world.setBlock(targetPos, block.defaultBlockState(), UPDATE_ALL)
                     world.playSound(null, targetPos, SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 0.5f, 1f)
                     itemStack.count -= 1

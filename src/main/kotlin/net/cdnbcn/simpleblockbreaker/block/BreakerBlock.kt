@@ -6,6 +6,7 @@ import net.cdnbcn.simpleblockbreaker.block.entity.BreakerBlockEntity
 import net.cdnbcn.simpleblockbreaker.item.BreakerToolComponent
 import net.minecraft.core.BlockPos
 import net.minecraft.core.NonNullList
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.util.RandomSource
 import net.minecraft.world.entity.LivingEntity
@@ -62,14 +63,14 @@ class BreakerBlock(settings: Properties) :
         val config = BlockBreakerMod.PROCESSED_CONFIG
 
         val flag = config.breakerListType == BlockBreakerMod.Config.ListType.WHITELIST
-        if (config.breakerListItems.contains(targetState.block) != flag) return
+        if (config.breakerListItems.contains(BuiltInRegistries.BLOCK.getKey(targetState.block)) != flag) return
 
         // Blocks with a negative destroy time are unbreakable
         if (targetState.block.defaultDestroyTime() < 0.0f) {
             if (!config.canBreakUnbreakable) return
 
             val flag1 = config.unbreakableListType == BlockBreakerMod.Config.ListType.WHITELIST
-            if (config.unbreakableListItems.contains(targetState.block) != flag1) return
+            if (config.unbreakableListItems.contains(BuiltInRegistries.BLOCK.getKey(targetState.block)) != flag1) return
         }
 
         val stacks = targetState.getDrops(
